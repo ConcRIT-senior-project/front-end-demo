@@ -1,13 +1,8 @@
 
-export type View = 'dashboard' | 'checkIn' | 'tests' | 'samples' | 'projects' | 'admin'
+export type View = 'checkIn'
 
 export const NAV_ITEMS: { id: View; label: string }[] = [
-  { id: 'dashboard', label: 'Dashboard' },
   { id: 'checkIn', label: 'Sample Check In' },
-  { id: 'tests', label: 'All Tests View' },
-  { id: 'samples', label: 'All Samples View' },
-  { id: 'projects', label: 'All Projects View' },
-  { id: 'admin', label: 'Admin' },
 ]
 
 type SidebarProps = {

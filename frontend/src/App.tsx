@@ -3,23 +3,13 @@ import AppLayout from "./components/layout/AppLayout";
 import { NAV_ITEMS, type View } from "./components/layout/Sidebar";
 
 import CheckIn from "./pages/CheckIn";
-import ProjectIntake from "./pages/Projects";
-import Admin from "./pages/Admin";
-import Dashboard from "./pages/Dashboard";
-import Tests from "./pages/Tests";
-import Samples from "./pages/Samples";
 
 export default function App() {
-  const [view, setView] = useState<View>('dashboard')
+  const [view, setView] = useState<View>('checkIn')
   const [isSignedOut, setIsSignedOut] = useState(false)
 
   const views: Record<View, React.ReactNode> = {
-    dashboard: <Dashboard />,
     checkIn: <CheckIn />,
-    tests: <Tests />,
-    samples: <Samples onNavigate={setView} />,
-    projects: <ProjectIntake />,
-    admin: <Admin />,
   }
 
   const pageLabel =
