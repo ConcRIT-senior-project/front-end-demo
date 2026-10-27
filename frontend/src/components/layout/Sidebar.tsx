@@ -1,13 +1,13 @@
 
-type View = 'tests' | 'test-check-in' |'samples' | 'sample-check-in' | 'projects' | 'data-structures'
+export type View = 'dashboard' | 'checkIn' | 'tests' | 'samples' | 'projects' | 'admin'
 
-const NAV_ITEMS: { id: View; label: string }[] = [
-  { id: 'tests', label: 'Dashboard / Test View' },
-  { id: 'test-check-in', label: 'Test Check In' },
-  { id: 'samples', label: 'Sample View' },
-  { id: 'sample-check-in', label: 'Sample Check In' },
-  { id: 'projects', label: 'Projects' },
-  { id: 'data-structures', label: 'Admin' },
+export const NAV_ITEMS: { id: View; label: string }[] = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'checkIn', label: 'Sample Check In' },
+  { id: 'tests', label: 'All Tests View' },
+  { id: 'samples', label: 'All Samples View' },
+  { id: 'projects', label: 'All Projects View' },
+  { id: 'admin', label: 'Admin' },
 ]
 
 type SidebarProps = {

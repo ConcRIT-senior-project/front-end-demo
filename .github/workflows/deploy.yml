@@ -1,0 +1,101 @@
+name: Build and Deploy to VM
+ 
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+ 
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+ 
+env:
+  REGISTRY: ghcr.io
+ 
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+ 
+      - name: Compute lowercase image names
+        id: vars
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "backend_image=${{ env.REGISTRY }}/${OWNER_LC}/backend" >> "$GITHUB_OUTPUT"
+          echo "frontend_image=${{ env.REGISTRY }}/${OWNER_LC}/frontend" >> "$GITHUB_OUTPUT"
+ 
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+ 
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.backend_image }}:latest
+            ${{ steps.vars.outputs.backend_image }}:${{ github.sha }}
+ 
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.frontend_image }}:latest
+            ${{ steps.vars.outputs.frontend_image }}:${{ github.sha }}
+ 
+  deploy:
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    # Runs ON the box via a self-hosted runner: outbound connections only
+    runs-on: [self-hosted, linux, dev-vm]
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+ 
+      - name: Sync compose file
+        run: cp docker-compose.prod.yml ~/app/docker-compose.yml
+ 
+      - name: Log in to GHCR
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+ 
+      - name: Pull and restart
+        run: |
+          cd ~/app
+          docker compose pull
+          docker compose up -d --remove-orphans
+          docker image prune -f
+ 
+      # Fails the job if the app didn't actually come up
+      - name: Smoke test
+        run: |
+          curl --fail --silent --show-error --retry 20 --retry-delay 3 --retry-connrefused http://127.0.0.1:8080/health
+          echo
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 --output /dev/null http://127.0.0.1:8080/
+ 
+      - name: Show container status on failure
+        if: failure()
+        run: |
+          cd ~/app
+          docker compose ps
+          docker compose logs --tail 50
+ 
+      - name: Log out of GHCR
+        if: always()
+        run: docker logout ghcr.io

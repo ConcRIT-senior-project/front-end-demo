@@ -11,7 +11,6 @@ export default function ProjectIntake() {
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState(emptyProjectFilters)
   const [draftFilters, setDraftFilters] = useState(emptyProjectFilters)
-  const [dates, setDates] = useState({startDate: '',dueDate: '',})
   const filteredProjects = PROJECTS.filter(project =>
     (!filters.status || project.status === filters.status)
     && (!filters.client || project.client === filters.client)
@@ -52,8 +51,8 @@ export default function ProjectIntake() {
     <div className="space-y-8">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-mono text-red-700 uppercase tracking-widest mb-1">Project Registration</p>
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Project Intake</h1>
+          <p className="text-xs font-mono text-red-700 uppercase tracking-widest mb-1">Project Management</p>
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Projects</h1>
         </div>
         <button
           type="button"

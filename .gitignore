@@ -1,2 +1,29 @@
+# local
+.env
+.env.*
+!.env.example
+*.local
+appsettings.Development.local.json
+*.pem
+*.key
+ci_deploy_key*
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# React
 node_modules/
 dist/
+*.tsbuildinfo
+npm-debug.log*
+
+# Logs
+*.log

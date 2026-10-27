@@ -1,0 +1,46 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: dev-db
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${DB_PASSWORD}
+      MSSQL_PID: Developer
+    ports:
+      # loopback only: reachable through an SSH tunnel, never from the network
+      - "127.0.0.1:1433:1433"
+    volumes:
+      - db-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  backend:
+    image: ghcr.io/concrit-senior-project/backend:latest
+    container_name: dev-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=db;Database=${DB_NAME};User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True"
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000
+
+  frontend:
+    image: ghcr.io/concrit-senior-project/frontend:latest
+    container_name: dev-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      # loopback only: devs reach it via `ssh -L 8090:localhost:8080 <user>@<box>`
+      - "127.0.0.1:8080:80"
+
+volumes:
+  db-data:

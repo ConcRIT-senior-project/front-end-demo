@@ -1,0 +1,749 @@
+# Import or paste this file to https://editor.swagger.io/ to view endpoints and related objects
+
+openapi: 3.2.1
+info:
+ title: SOIL API
+ version: 1.0.0
+ description: API for the SOIL system
+
+tags: 
+  - name: Users
+    description: Users info
+  - name: Auth
+    description: Current user and sign-in info
+  - name: Samples
+    description: Sample info and tracking
+  - name: Specimen
+    description: Specimen info and tracking
+  - name: Tests
+    description: Endpoints related to Tests 
+  - name: Projects
+    description: Project info 
+  - name: Clients 
+    description: Clients info
+  - name: Offices
+    description: Office info
+  - name: Invoices
+    description: Endpoints related to Invoice
+  
+paths:
+# USER ROUTES
+  api/v1/users:
+    get:
+      tags: [Users]
+      summary: Retrieve all users
+      responses:
+        '200':
+          description: A successful response -- all users in the system is returned.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # if we use Entra ID, may not need this endpoint--can use LOGIN to add user to DB 
+    post:
+      tags: [Users]    
+      summary: Add a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Successfully created the user
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  
+  api/v1/users/{id}:
+    get:
+      tags: [Users]
+      summary: Get one user by id
+      parameters: 
+        - name: id
+          in: path
+          required: true
+          description: the unique identifier of the user
+          schema:
+            type: integer
+      responses: 
+        '200': 
+          description: Successful response - one user returned
+          content: 
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Users] 
+      summary: Update the user's information based on id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: the unique identifier of the user
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserDto'
+              examples: 
+                officeId: 4
+                role: Manager
+      responses:
+        '200':
+          description: Sucessfully updated User
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+# AUTH ROUTES 
+  /api/v1/auth/login: # If we do not use Entra ID
+    post: 
+      tags: [Auth]
+      summary: Log a user in
+      requestBody: 
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+              examples: 
+                username: Johnny123
+                password: hahahaldaldlad
+      responses:
+        '200':
+          description: Sucessfully Logged User in
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/auth/me: # On first login, could be used to create a user record in DB, linked with the Entra Object ID
+    get:
+      tags: [Auth]
+      summary: Get currently logged user's info 
+      responses:
+        '200':
+          description: Sucessfully retrieved user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # TEST ROUTES
+  /api/v1/tests:
+    get:
+      tags: [Tests]
+      summary: Retrieve all tests
+      parameters:
+      - name: page
+        in: query
+        required: true
+        description: what page it is on
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        required: true
+        description: max responses per page
+        schema:
+          type: integer
+      - name: field
+        in: query
+        required: true
+        description: A dictionary of all filters
+        schema:
+          type: object
+          additionalProperties:
+            type: string
+        example:
+          name: "hello"
+          type: "world"
+      responses:
+        '200':
+          description: A successful response -- all tests in the system is returned.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Test'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:    
+      tags: [Tests]
+      summary: Assign a new test to a specimen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/test'
+      responses:
+        '201':
+          description: Successfully assigned the test
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/test'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # SPECIMEN ROUTES
+  /api/v1/specimens:
+    get:
+      tags: [Specimen]
+      summary: Retrieve all specimen
+      responses:
+        '200':
+          description: A successful response -- all speciemn in the system is returned.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Specimen'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:    
+      tags: [Specimen]
+      summary: Create a new specimen from a sample
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Specimen'
+      responses:
+        '201':
+          description: Successfully created the specimen
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Specimen'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # SAMPLE ROUTES
+  /api/v1/samples:
+    get:
+      tags: [Samples]
+      summary: Retrieve all samples
+      parameters:
+      - name: page
+        in: query
+        required: true
+        description: what page it is on
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        required: true
+        description: max responses per page
+        schema:
+          type: integer
+      - name: field
+        in: query
+        required: true
+        description: A dictionary of all filters
+        schema:
+          type: object
+          additionalProperties:
+            type: string
+        example:
+          name: "hello"
+          type: "world"
+      responses:
+        '200':
+          description: A successful response -- all samples in the system is returned.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sample'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:    
+      tags: [Samples]
+      summary: Create a new sample
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sample'
+      responses:
+        '201':
+          description: Successfully created the sample
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Sample'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  
+# SAMPLE LABELS
+/api/v1/samples/{id}/labels/:
+  get:
+      tags: [Samples]
+      summary: Get the labels associated with the sample 
+      parameters: 
+        - name: id
+          in: path
+          required: true
+          description: the unique identifier of the sample
+          schema:
+            type: integer
+      responses: 
+        '200': 
+          description: Successful response - all labels related to the samples are returned. 
+          content: 
+            application/json:
+              schema: 
+                type: array
+                items: 
+                  $ref: '#/components/schemas/Label'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  post: 
+      tags: [Samples]
+      summary: Create a new label for the sample 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Label'
+      responses: 
+        '201': 
+          description: Sucessfully created new label for a sample
+          content: 
+            application/json:
+              schema:
+                items: 
+                  $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  
+  # PROJECT ROUTES
+  /api/v1/projects:
+    get:
+        tags: [Projects]
+        summary: get list of projects
+        responses:
+          '200':
+            description: successfully retrieved project information 
+            content: 
+              application/json:
+                schema:
+                  type: array
+                  items: 
+                    $ref : '#/components/schemas/Project'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+    post: 
+      tags: [Projects]
+      summary: Add a new project 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+      responses: 
+        '201':
+          description: Successfully added project 
+          content: 
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+
+# CLIENT ROUTES
+  /api/v1/clients:
+    get:
+      tags: [Clients]
+      summary: Get list of all clients 
+      responses: 
+        '200':
+          description: Successfully retrieved client information
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/Client'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post: 
+      tags: [Clients]
+      summary: Add new client to the system. 
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            $ref: '#/components/schemas/Client'
+      responses: 
+        '201': 
+          description: Sucessfully added the client 
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+# OFFICE ROUTES
+  /api/v1/offices:
+    get: 
+      tags: [Offices]
+      summary: get all offices from the system 
+      responses: 
+        '200': 
+          description: Successfully retrived offices information 
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#components/schemas/Office'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post: 
+      tags: [Offices]
+      summary: Add new office to the system.
+      requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Office' 
+      responses: 
+        '201': 
+          description: Sucessfully added the office 
+          content: 
+            application/json:
+              schema:
+                $ref: '$/components/schemas/Office'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+
+# INVOICE ROUTES 
+  /api/v1/invoices:
+    get: 
+      tags: [Invoice]
+      summary: Return all invoice data 
+      responses: 
+        '200':
+          description: Sucessfully retrieved invoice data
+          content: 
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invoice'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post: 
+      tags: [Invoice]
+      summary: Add a new Invoice row with data
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema: 
+              $ref: '#/components/schemas/Invoice' 
+      responses: 
+        '201':
+          description: Sucessfully added a new invoice data 
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  
+  /api/v1/invoices/{id}:
+    get: 
+    # TODO: Fill the get method 
+    patch: 
+    # TODO: fill the patch method 
+  
+  /api/v1/invoices/{id}/pdf:  # Generate a PDF from the invoice data and return it; it is also saved to SharePoint? 
+    get:
+    # TODO: fill the method
+
+
+
+
+
+components:
+
+  responses:
+    BadRequest: # 400
+      description: Invalid request
+      # content:
+      #   application/problem+json:
+      #     schema:
+      #       $ref: '#/components/schemas/ProblemDetails'
+    Unauthorized: # 401
+      description: Missing or invalid access token
+    Forbidden: # 403
+      description:  Forbidden, user's role does not permit this action. (Only Admin is allowed to use this endpoint)
+    NotFound: # 404
+      description: Resource not found
+    InternalServerError: # 500
+      description: Internal server error -- something went wrong.
+    
+  schemas:
+
+    # ProblemDetails: 
+    #   type: object
+    #   properties:
+    #     type:
+    #       type: string
+    #     title:
+    #       type: string
+    #     status: 
+    #       type: integer
+    #     detail:
+    #       type: string
+        
+    User:
+      type: object
+      required:
+        - id
+        - username
+        - password
+        - role
+      properties:
+        id:
+          type: integer
+          examples: [1]
+        entraObjectId: # Apparently using Entra ID returns an unique Object ID. This may be our way to see if user is authenticated.
+          type: string
+          format: uuid 
+        username:
+          type: string
+          examples: [johnsmith123]
+        password: # MOST LIKELY WON'T be needing if using with ENTRA ID
+          type: string
+          examples: [lamdalsdjfhaueujje12312qsdkkewqeq]
+        email:
+          type: string
+          format: email
+          examples: [john.smith@example.com]
+        officeId:
+          type: integer # Reference to office ID
+          examples: 1
+        role:
+          type: string
+          enum: [Technician, Manager, Admin]
+          examples: Technician
+        createdAt:
+          type: string
+          format: date-time
+    
+
+
+    UpdateUserDto:
+      type: object
+      minProperties: 1
+      additionalProperties: false
+      properties:
+        role: 
+          type: string
+        officeId:
+          type: integer
+
+    UserLoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username: 
+          type: string
+        password: 
+          type: string 
+    
+    CurrentUser: 
+      type: object
+      properties:
+        entraObjectId: 
+          type: string
+          format: uuid 
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        officeId:
+          type: integer
+        role:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Test:
+    # TODO: Fill out test schema
+
+    Specimen:
+    # TODO: Fill out specimen schema
+
+    Sample:
+      type: object
+      properties:
+        id: 
+          type: integer
+        sampleName:
+          type: string 
+        material:
+          type: string 
+        sampleType:
+          type: string 
+        receivedDate: 
+          type: string
+          format: date-time
+        chainOfCustody:
+          type: string  # this would most likely be reference to user’s ID/name
+
+    Project:
+        type: object
+        properties: 
+          id:
+            type: integer
+          projectName:
+            type: string 
+          sample:
+            type: array
+            items:
+              $ref: '#/components/schemas/Sample' # maybe sample count for specific project instead of the whole sample list
+          client: 
+            type: string # reference to Client
+          createdAt:
+            type: string
+            format: date-time
+
+    Client: 
+      type: object 
+      properties: 
+        id: 
+          type: integer
+        name: 
+          type: string 
+        projectName:
+          type: string  # most likely reference to project ID/projectName 
+
+    Label:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        sampleId:
+          type: integer # reference to Sample ID?
+        createdBy:
+          $ref: '#/components/schemas/User' # TODO: make a reference to one user.
+        createdAt:
+          type: string
+          format: date-time
+
+
+    Office: 
+      type: object 
+      properties: 
+        id: 
+          type: integer 
+        name: 
+          type: string 
+        location: 
+          type: string
+        phone: 
+          type: string
+
+    
+    Invoice: 
+      type: Object 
+      properties: 
+        invoiceNumber: 
+          type: integer 
+        uuid: # Sharepoint Document ID or might be string if its URL? 
+          type: integer 
+        name: 
+          type: string 
+        invoiceDate: 
+          type: string 
+          format: date-time
+        cost:
+          type: number 
+          format: decimal
+        createdAt: 
+          type: string 
+          format: date-time
+
+        
+
+
+
+

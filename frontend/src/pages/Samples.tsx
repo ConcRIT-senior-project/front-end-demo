@@ -2,16 +2,17 @@ import { useState } from "react"
 import { SAMPLES } from "../data/mockData"
 import StatusPill from "../components/common/StatusPill"
 import FilterModal from "../components/common/FilterModal"
+import type { View } from "../components/layout/Sidebar"
 
 
 const filterSelectClasses = 'mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-slate-400 focus:outline-none'
 const emptySampleFilters = { status: '', priority: '', client: '' }
 
 type SampleViewProps = {
-  onNavigate: (view: 'tests' | 'samples' | 'sample-check-in' | 'projects' | 'data-structures') => void
+  onNavigate: (view: View) => void
 }
 
-export default function SampleView({ onNavigate }: SampleViewProps) {
+export default function Samples({ onNavigate }: SampleViewProps) {
   const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState(emptySampleFilters)
@@ -38,7 +39,7 @@ export default function SampleView({ onNavigate }: SampleViewProps) {
         </div>
         <button
           type="button"
-          onClick={() => onNavigate('sample-check-in')}
+          onClick={() => onNavigate('checkIn')}
           className="px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-xl hover:bg-slate-700 transition-colors"
         >
           + Check In Sample

@@ -6,6 +6,8 @@ type CalendarFieldProps = {
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  minDate?: string
+  maxDate?: string
 }
 
 function toISODate(date: Date): string {
@@ -60,12 +62,14 @@ export default function CalendarField({
   value,
   onChange,
   placeholder = 'MM / DD / YYYY',
+  minDate,
+  maxDate,
 }: CalendarFieldProps) {
   const inputId = useId()
   const [isOpen, setIsOpen] = useState(false)
   const [visibleMonth, setVisibleMonth] = useState(new Date())
   const [dateText, setDateText] = useState('')
-  const [dateTextError, setDateTextError] = useState(false)
+  const [dateTextError, setDateTextError] = useState<string | null>(null)
 
   const selectedDate = parseISODate(value)
   const year = visibleMonth.getFullYear()
@@ -80,6 +84,10 @@ export default function CalendarField({
   })
 
   const today = toISODate(new Date())
+  const isDateAllowed = (date: string) =>
+    (!minDate || date >= minDate) && (!maxDate || date <= maxDate)
+  const getDateBoundsMessage = () =>
+    `Choose a date${minDate ? ` on or after ${formatDate(minDate)}` : ''}${minDate && maxDate ? ' and' : ''}${maxDate ? ` on or before ${formatDate(maxDate)}` : ''}.`
 
   function changeMonth(offset: number) {
     setVisibleMonth(current =>
@@ -92,7 +100,7 @@ export default function CalendarField({
   }
 
   return (
-    <div className="block">
+    <div className="block col-span-3">
       <span className="mb-1.5 block text-xs font-mono uppercase tracking-wider text-slate-500">
         {label}
       </span>
@@ -103,13 +111,13 @@ export default function CalendarField({
           onClick={() => {
             setVisibleMonth(selectedDate ?? new Date())
             setDateText(formatDate(value))
-            setDateTextError(false)
+            setDateTextError(null)
             setIsOpen(true)
           }}
           aria-label={`Choose ${label.toLowerCase()}`}
           aria-haspopup="dialog"
           aria-expanded={isOpen}
-          className="flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2.5 text-left text-sm outline-none"
+          className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2.5 py-1.5 text-left text-sm outline-none"
         >
           <span className={value ? 'text-slate-700' : 'text-slate-400'}>
             {value ? formatDate(value) : placeholder}
@@ -118,31 +126,11 @@ export default function CalendarField({
 
         <button
           type="button"
-          onClick={() => {
-            setVisibleMonth(selectedDate ?? new Date())
-            setDateText(formatDate(value))
-            setDateTextError(false)
-            setIsOpen(true)
-          }}
-          aria-label={`Open ${label.toLowerCase()} calendar`}
-          className="mr-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-[#f1e5e4] hover:text-[#940700] focus-visible:outline-2 focus-visible:outline-[#940700]"
+          onClick={() => onChange(today)}
+          disabled={!isDateAllowed(today)}
+          className="mr-1 shrink-0 rounded-lg px-2 py-1 text-xs font-semibold bg-[#f0f0ef] text-[#940700] transition-colors hover:bg-[#f1e0df] focus-visible:outline-2 focus-visible:outline-[#940700]"
         >
-          <svg
-            aria-hidden="true"
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3" y="5" width="18" height="16" rx="2" />
-            <path d="M16 3v4M8 3v4M3 11h18" />
-            <path d="m9 15 2 2 4-4" />
-          </svg>
+          Set to Today
         </button>
       </div>
 
@@ -212,12 +200,16 @@ export default function CalendarField({
                 event.preventDefault()
                 const date = parseDisplayDate(dateText)
                 if (!date) {
-                  setDateTextError(true)
+                  setDateTextError('Enter a valid date as MM/DD/YYYY.')
+                  return
+                }
+                if (!isDateAllowed(date)) {
+                  setDateTextError(getDateBoundsMessage())
                   return
                 }
 
                 onChange(date)
-                setDateTextError(false)
+                setDateTextError(null)
                 setIsOpen(false)
               }}
             >
@@ -236,11 +228,11 @@ export default function CalendarField({
                   autoComplete="off"
                   placeholder="MM / DD / YYYY"
                   value={dateText}
-                  aria-invalid={dateTextError}
+                  aria-invalid={Boolean(dateTextError)}
                   aria-describedby={dateTextError ? `${inputId}-error` : undefined}
                   onChange={event => {
                     setDateText(event.target.value)
-                    setDateTextError(false)
+                    setDateTextError(null)
                   }}
                   className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
                 />
@@ -257,7 +249,7 @@ export default function CalendarField({
                   role="alert"
                   className="mt-1.5 text-xs text-[#940700]"
                 >
-                  Enter a valid date as MM/DD/YYYY.
+                  {dateTextError}
                 </p>
               )}
             </form>
@@ -279,6 +271,7 @@ export default function CalendarField({
                 const isSelected = dateValue === value
                 const isToday = dateValue === today
                 const isCurrentMonth = date.getMonth() === month
+                const isDisabled = !isDateAllowed(dateValue)
 
                 return (
                   <button
@@ -288,13 +281,14 @@ export default function CalendarField({
                       onChange(dateValue)
                       setIsOpen(false)
                     }}
+                    disabled={isDisabled}
                     aria-pressed={isSelected}
                     aria-label={date.toLocaleDateString('en-US', {
                       month: 'long',
                       day: 'numeric',
                       year: 'numeric',
                     })}
-                    className={`relative flex h-9 items-center justify-center rounded-lg text-xs transition-colors ${
+                    className={`relative flex h-9 items-center justify-center rounded-lg text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
                       isSelected
                         ? 'bg-[#940700] font-semibold text-white'
                         : isCurrentMonth
@@ -318,7 +312,7 @@ export default function CalendarField({
                 onClick={() => {
                   onChange('')
                   setDateText('')
-                  setDateTextError(false)
+                  setDateTextError(null)
                   setIsOpen(false)
                 }}
                 className="text-xs font-medium text-slate-500 hover:text-[#940700]"
@@ -330,12 +324,15 @@ export default function CalendarField({
                 type="button"
                 onClick={() => {
                   const now = new Date()
-                  onChange(toISODate(now))
+                  const todayValue = toISODate(now)
+                  if (!isDateAllowed(todayValue)) return
+                  onChange(todayValue)
                   setDateText(formatDate(toISODate(now)))
-                  setDateTextError(false)
+                  setDateTextError(null)
                   setVisibleMonth(now)
                   setIsOpen(false)
                 }}
+                disabled={!isDateAllowed(today)}
                 className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700"
               >
                 Today

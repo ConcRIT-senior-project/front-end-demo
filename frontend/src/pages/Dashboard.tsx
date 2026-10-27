@@ -19,8 +19,8 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <p className="text-xs font-mono text-red-700 uppercase tracking-widest mb-1">Overview — Sep 24, 2026</p>
-        <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Lab Dashboard</h1>
+        <p className="text-xs font-mono text-red-700 uppercase tracking-widest mb-1">Overview — {new Date().toLocaleDateString()}</p>
+        <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Dashboard</h1>
       </div>
 
       {/* KPI row */}

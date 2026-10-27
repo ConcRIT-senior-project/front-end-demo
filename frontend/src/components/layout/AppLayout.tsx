@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react'
-import Sidebar from './Sidebar'
+import Sidebar, { type View } from './Sidebar'
 import TopBar from './TopBar'
-
-type View = 'tests' | 'test-check-in' | 'samples' | 'sample-check-in' | 'projects' | 'data-structures'
 
 type AppLayoutProps = {
   view: View
